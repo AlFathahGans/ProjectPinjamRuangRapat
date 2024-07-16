@@ -1,38 +1,70 @@
-@extends('layouts.app')
+<form id="proseseditrooms" enctype="multipart/form-data">
+    @csrf
+    @method('PUT')
+    <div class="row">
+        <div class="col-12">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Enter Name"
+                        value="{{ $room->name }}" maxlength="50" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea id="description" name="description" required placeholder="Enter Description" class="form-control">{{ $room->description }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Available</label>
+                    <select id="is_available" name="is_available" required class="form-control">
+                        <option value="1" {{ $room->is_available ? 'selected' : '' }}>Yes</option>
+                        <option value="0" {{ !$room->is_available ? 'selected' : '' }}>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
 
-@section('content')
-<div class="container">
-    <h4>Edit Ruangan</h4>
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <strong>Whoops!</strong> There were some problems with your input.<br><br>
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-    <form action="{{ route('rooms.update', $room->id) }}" method="POST">
-        @csrf
-        @method('PUT')
-        <div class="row">
-            <div class="col-xs-12 col-sm-12 col-md-12 mt-2">
-                <div class="form-group">
-                    <strong>Name:</strong>
-                    <input type="text" name="name" value="{{ $room->name }}" class="form-control" placeholder="Name">
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-12 col-md-12 mt-2 mb-2">
-                <div class="form-group">
-                    <strong>Description:</strong>
-                    <textarea class="form-control" style="height:150px" name="description" placeholder="Description">{{ $room->description }}</textarea>
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-12 col-md-12">
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </div>
-        </div>
-    </form>
-</div>
-@endsection
+<script type="text/javascript">
+    $('#proseseditrooms').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{{ route('rooms.update', $room->id) }}",
+            method: "POST",
+            data: new FormData(this),
+            processData: false,
+            contentType: false,
+            async: true,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            beforeSend: function() {
+                Swal.fire({
+                    title: "Menyimpan",
+                    text: "Silahkan Tunggu, Proses Memakan Waktu",
+                    onOpen: () => {
+                        Swal.showLoading()
+                    }
+                });
+            },
+            success: function(response) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Berhasil",
+                    text: "Update Sukses!",
+                    timer: 1500,
+                });
+                $('#editrooms').modal('hide');
+                $("#table_rooms").DataTable().ajax.reload(null, false);
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal",
+                    text: "Update Gagal!",
+                });
+            }
+        });
+        return false;
+    });
+</script>

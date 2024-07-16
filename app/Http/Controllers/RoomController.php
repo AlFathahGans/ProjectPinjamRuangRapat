@@ -4,13 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use Illuminate\Http\Request;
+use DataTables;
 
 class RoomController extends Controller
 {
-    public function index()
+    public function __construct()
     {
-        $rooms = Room::all();
-        return view('rooms.index', compact('rooms'));
+        $this->middleware('auth');
+    }
+    
+    public function index(Request $request)
+    {
+        if ($request->ajax()) {
+            $rooms = Room::all();
+            return datatables()->of($rooms)
+                ->addColumn('action', function ($row) {
+                    $edit = "
+                    <button class='btn btn-sm btn-primary tooltip-position-bottom' onclick='edit_rooms({$row->id})' title='Edit'>
+                        Edit
+                    </button>";
+                    $hapus = "
+                    <button class='btn btn-sm btn-danger tooltip-position-bottom' onclick='hapus_rooms({$row->id})' title='Hapus'>
+                        Hapus
+                    </button>";
+                    $aksi = "<div class='text-center'>".$edit." ".$hapus."</div>";
+
+                    return $aksi;
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+
+        return view('rooms.index');
     }
 
     public function create()
@@ -23,11 +48,12 @@ class RoomController extends Controller
         $request->validate([
             'name' => 'required',
             'description' => 'nullable',
+            'is_available' => 'required|boolean',
         ]);
 
         Room::create($request->all());
-        return redirect()->route('rooms.index')
-                         ->with('success', 'Room created successfully.');
+
+        return response()->json(['success' => 'Room created successfully.']);
     }
 
     public function edit($id)
@@ -41,19 +67,20 @@ class RoomController extends Controller
         $request->validate([
             'name' => 'required',
             'description' => 'nullable',
+            'is_available' => 'required|boolean',
         ]);
 
         $room = Room::findOrFail($id);
         $room->update($request->all());
-        return redirect()->route('rooms.index')
-                         ->with('success', 'Room updated successfully.');
+
+        return response()->json(['success' => 'Room updated successfully.']);
     }
 
     public function destroy($id)
     {
         $room = Room::findOrFail($id);
         $room->delete();
-        return redirect()->route('rooms.index')
-                         ->with('success', 'Room deleted successfully.');
+
+        return response()->json(['success' => 'Room deleted successfully.']);
     }
 }

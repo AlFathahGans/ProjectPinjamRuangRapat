@@ -3,64 +3,87 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
-use App\Models\Room;
 use Illuminate\Http\Request;
+use DataTables;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function __construct()
     {
-        $bookings = Booking::with('room')->get();
-        return view('bookings.index', compact('bookings'));
+        $this->middleware('auth');
+    }
+
+    public function index(Request $request)
+    {
+        if ($request->ajax()) {
+            $data = Booking::with(['user', 'room', 'status', 'approval_status'])->get();
+            return datatables()->of($data)
+                ->addIndexColumn()
+                ->addColumn('action', function($row){
+                    $edit = "
+                    <button class='btn btn-sm btn-primary tooltip-position-bottom' onclick='edit_bookings({$row->id})' title='Edit'>
+                        Edit
+                    </button>";
+                    $hapus = "
+                    <button class='btn btn-sm btn-danger tooltip-position-bottom' onclick='hapus_bookings({$row->id})' title='Hapus'>
+                        Hapus
+                    </button>";
+                    $aksi = "<div class='text-center'>".$edit." ".$hapus."</div>";
+                    
+                    return $aksi;
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+
+        return view('bookings.index');
     }
 
     public function create()
     {
-        $rooms = Room::all();
-        return view('bookings.create', compact('rooms'));
+        return view('bookings.create');
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'room_id' => 'required',
-            'booked_by' => 'required',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+        $validatedData = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'room_id' => 'required|exists:rooms,id',
+            'status_id' => 'required|exists:statuses,id',
+            'approval_status_id' => 'required|exists:approval_statuses,id',
+            'start_time' => 'nullable|date',
+            'end_time' => 'nullable|date|after_or_equal:start_time',
         ]);
 
-        Booking::create($request->all());
-        return redirect()->route('bookings.index')
-                         ->with('success', 'Booking created successfully.');
+        Booking::create($validatedData);
+        return response()->json(['success' => 'Booking saved successfully.']);
     }
 
     public function edit($id)
     {
-        $booking = Booking::findOrFail($id);
-        $rooms = Room::all();
-        return view('bookings.edit', compact('booking', 'rooms'));
+        $booking = Booking::find($id);
+        return view('bookings.edit', compact('booking'));
     }
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'room_id' => 'required',
-            'booked_by' => 'required',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
+        $validatedData = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'room_id' => 'required|exists:rooms,id',
+            'status_id' => 'required|exists:statuses,id',
+            'approval_status_id' => 'required|exists:approval_statuses,id',
+            'start_time' => 'nullable|date',
+            'end_time' => 'nullable|date|after_or_equal:start_time',
         ]);
 
-        $booking = Booking::findOrFail($id);
-        $booking->update($request->all());
-        return redirect()->route('bookings.index')
-                         ->with('success', 'Booking updated successfully.');
+        $booking = Booking::find($id);
+        $booking->update($validatedData);
+        return response()->json(['success' => 'Booking updated successfully.']);
     }
 
     public function destroy($id)
     {
-        $booking = Booking::findOrFail($id);
-        $booking->delete();
-        return redirect()->route('bookings.index')
-                         ->with('success', 'Booking deleted successfully.');
+        Booking::find($id)->delete();
+        return response()->json(['success' => 'Booking deleted successfully.']);
     }
 }

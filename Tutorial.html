@@ -1,0 +1,21 @@
+1. composer create-project --prefer-dist laravel/laravel booking-ruangan
+2. cd booking-ruangan
+3. composer require laravel/ui
+4. php artisan ui bootstrap --auth
+11. php artisan make:model Room -m
+12. php artisan make:model Booking -m
+13. php artisan make:model Status -m
+14. php artisan make:model ApprovalStatus -m
+15. php artisan make:seeder StatusSeeder
+16. php artisan make:seeder ApprovalStatusSeeder
+17. Tambahkan di seeder :  use Illuminate\Support\Facades\DB;
+18. php artisan db:seed --class=StatusSeeder
+19. php artisan db:seed --class=ApprovalStatusSeeder
+20. php artisan make:controller RoomController --resource
+21. php artisan make:controller BookingController --resource
+
+Install Jajra :
+
+- composer require yajra/laravel-datatables-oracle
+- Tambahkan Yajra\DataTables\DataTablesServiceProvider::class, di config/app.php providers
+- php artisan vendor:publish --provider="Yajra\DataTables\DataTablesServiceProvider"

@@ -5,16 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Room extends Model
+class Status extends Model
 {
     use HasFactory;
-    
-    protected $fillable = ['name', 'description', 'is_available', 'status_id'];
 
-    public function status()
-    {
-        return $this->belongsTo(Status::class);
-    }
+    protected $fillable = [
+        'id',
+        'name'
+    ];
 
     public function bookings()
     {
